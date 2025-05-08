@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .hero-section {
+            background: linear-gradient(rgba(0, 123, 255, 0.9), rgba(0, 123, 255, 0.7)),
+                        url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        .icon-large {
+            font-size: 2.5rem;
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-book"></i> PPDB Online
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#beranda">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#info">Informasi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#jadwal">Jadwal</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#kontak">Kontak</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth_bp.logout') }}">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="beranda">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold">Selamat Datang di PPDB Online</h1>
+            <p class="lead mb-4">Sistem Penerimaan Peserta Didik Baru Tahun Ajaran 2025/2026</p>
+            <a href="#daftar" class="btn btn-light btn-lg px-4 me-2">Mulai Pendaftaran</a>
+            <a href="#info" class="btn btn-outline-light btn-lg px-4">Pelajari Selengkapnya</a>
+        </div>
+    </section>
+
+    <!-- Info Section -->
+    <section class="py-5" id="info">
+        <div class="container">
+            <h2 class="text-center mb-5">Informasi PPDB</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 feature-card shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-file-text icon-large mb-3"></i>
+                            <h5 class="card-title">Persyaratan</h5>
+                            <p class="card-text">Informasi lengkap tentang dokumen dan persyaratan yang dibutuhkan untuk pendaftaran.</p>
+                            <a href="#" class="btn btn-primary">Selengkapnya</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 feature-card shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-calendar-check icon-large mb-3"></i>
+                            <h5 class="card-title">Jadwal PPDB</h5>
+                            <p class="card-text">Timeline lengkap proses PPDB dari pendaftaran hingga pengumuman hasil.</p>
+                            <a href="#" class="btn btn-primary">Selengkapnya</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 feature-card shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-person-check icon-large mb-3"></i>
+                            <h5 class="card-title">Kuota & Jalur</h5>
+                            <p class="card-text">Informasi tentang kuota dan jalur penerimaan yang tersedia.</p>
+                            <a href="#" class="btn btn-primary">Selengkapnya</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jadwal Section -->
+    <section class="py-5 bg-light" id="jadwal">
+        <div class="container">
+            <h2 class="text-center mb-5">Timeline PPDB</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex mb-3">
+                                <div class="p-2 bg-primary text-white rounded me-3">
+                                    <i class="bi bi-1-circle"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Pendaftaran Online</h5>
+                                    <p class="text-muted mb-0">1 - 15 Juni 2025</p>
+                                </div>
+                            </div>
+                            <div class="d-flex mb-3">
+                                <div class="p-2 bg-primary text-white rounded me-3">
+                                    <i class="bi bi-2-circle"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Verifikasi Berkas</h5>
+                                    <p class="text-muted mb-0">16 - 20 Juni 2025</p>
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div class="p-2 bg-primary text-white rounded me-3">
+                                    <i class="bi bi-3-circle"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Pengumuman Hasil</h5>
+                                    <p class="text-muted mb-0">25 Juni 2025</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4" id="kontak">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Kontak Kami</h5>
+                    <p>
+                        <i class="bi bi-envelope"></i> ppdb@sekolah.sch.id<br>
+                        <i class="bi bi-telephone"></i> (021) 1234567<br>
+                        <i class="bi bi-geo-alt"></i> Jalan Pendidikan No. 123
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h5>Media Sosial</h5>
+                    <a href="#" class="text-white me-3"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="text-white me-3"><i class="bi bi-twitter"></i></a>
+                    <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <small>&copy; 2025 PPDB Online. All rights reserved.</small>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
