@@ -66,7 +66,10 @@
         <div class="container text-center">
             <h1 class="display-4 fw-bold">Selamat Datang di PPDB Online</h1>
             <p class="lead mb-4">Sistem Penerimaan Peserta Didik Baru Tahun Ajaran 2025/2026</p>
-            <a href="#daftar" class="btn btn-light btn-lg px-4 me-2">Mulai Pendaftaran</a>
+            <!-- Update the button in the hero section -->
+             <a href="{{ url_for('main_bp.daftar') }}" class="btn btn-light btn-lg px-4 me-2">
+                 <i class="bi bi-person-plus"></i> Mulai Pendaftaran
+            </a>
             <a href="#info" class="btn btn-outline-light btn-lg px-4">Pelajari Selengkapnya</a>
         </div>
     </section>
