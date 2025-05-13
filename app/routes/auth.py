@@ -11,10 +11,16 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
+            
+            # Redirect ke halaman admin jika user adalah admin
+            if user.is_admin:
+                return redirect(url_for('main_bp.admin'))
             return redirect(url_for('main_bp.index'))
+            
         flash('Username atau password salah', 'danger')
     return render_template('login.html', title="Login")
 
@@ -58,3 +64,4 @@ def logout():
     logout_user()
     flash('Anda telah logout.', 'success')
     return redirect(url_for('auth_bp.login'))
+

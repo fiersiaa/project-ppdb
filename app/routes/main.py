@@ -46,10 +46,11 @@ def daftar():
 @main_bp.route("/admin")
 @login_required
 def admin():
+    # Cek apakah user adalah admin
     if not current_user.is_admin:
         flash('Anda tidak memiliki akses ke halaman admin.', 'danger')
         return redirect(url_for('main_bp.index'))
-    
+        
     pendaftaran = Pendaftaran.query.all()
     return render_template("admin.html", title="Admin Dashboard", pendaftaran=pendaftaran)
 
