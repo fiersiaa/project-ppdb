@@ -23,9 +23,12 @@ def create_app():
     # Register blueprints
     from .routes.auth import auth_bp
     from .routes.main import main_bp
+    from .routes.admin import admin_bp
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
-
+    app.register_blueprint(admin_bp, url_prefix='/admin')  
+    
     return app
 
 @login_manager.user_loader

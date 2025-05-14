@@ -52,7 +52,7 @@ def admin():
         return redirect(url_for('main_bp.index'))
         
     pendaftaran = Pendaftaran.query.all()
-    return render_template("admin.html", title="Admin Dashboard", pendaftaran=pendaftaran)
+    return render_template("dashboard_admin.html", title="Admin Dashboard", pendaftaran=pendaftaran)
 
 @main_bp.route("/admin/update_status/<int:id>", methods=['POST'])
 @login_required

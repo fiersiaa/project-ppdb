@@ -12,13 +12,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
+        print(f"Login attempt for: {username}")
+        
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
+            print(f"Login successful. Is admin: {user.is_admin}")  # Debug print
             
-            # Redirect ke halaman admin jika user adalah admin
             if user.is_admin:
-                return redirect(url_for('main_bp.admin'))
+                print("Redirecting to admin dashboard")               
+                return redirect(url_for('admin_bp.dashboard_admin'))
             return redirect(url_for('main_bp.index'))
             
         flash('Username atau password salah', 'danger')
