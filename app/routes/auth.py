@@ -12,15 +12,15 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        print(f"Login attempt for: {username}")
+        print(f"Login attempt for: {username}")  # Debug print
         
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            print(f"Login successful. Is admin: {user.is_admin}")  # Debug print
+            print(f"Login successful - Is admin: {user.is_admin}")  # Debug print
             
             if user.is_admin:
-                print("Redirecting to admin dashboard")               
+                print("Redirecting to admin dashboard")  # Debug print
                 return redirect(url_for('admin_bp.dashboard_admin'))
             return redirect(url_for('main_bp.index'))
             
