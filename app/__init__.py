@@ -9,16 +9,19 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'your_secret_key'
+    app.config['SECRET_KEY'] = 'your-secret-key'  # Change this
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth_bp.login'
-    login_manager.login_message = "Silakan login untuk mengakses halaman ini."
+    login_manager.login_message = "Silakan login untuk mengakses fitur ini."
     login_manager.login_message_category = "warning"
     migrate.init_app(app, db) 
+    
+    # Import models to ensure they're registered with SQLAlchemy
+    from .models import User, Pendaftaran
     
     # Register blueprints
     from .routes.auth import auth_bp

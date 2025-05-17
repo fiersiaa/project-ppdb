@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from ..models import User
 from .. import db
@@ -8,24 +8,41 @@ auth_bp = Blueprint('auth_bp', __name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for('admin_bp.dashboard_admin'))
+        return redirect(url_for('main_bp.home'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
-        print(f"Login attempt for: {username}")  # Debug print
+        # Check for admin credentials
+        if username == "admin" and password == "22":
+            # Get or create admin user
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                admin_user = User(
+                    username='admin',
+                    password=generate_password_hash('22'),
+                    is_admin=True
+                )
+                db.session.add(admin_user)
+                db.session.commit()
+            
+            login_user(admin_user)
+            flash('Selamat datang, Admin!', 'success')
+            return redirect(url_for('admin_bp.dashboard_admin'))
         
+        # Regular user login
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            print(f"Login successful - Is admin: {user.is_admin}")  # Debug print
-            
-            if user.is_admin:
-                print("Redirecting to admin dashboard")  # Debug print
-                return redirect(url_for('admin_bp.dashboard_admin'))
-            return redirect(url_for('main_bp.index'))
+            return redirect(url_for('main_bp.home'))
             
         flash('Username atau password salah', 'danger')
-    return render_template('login.html', title="Login")
+    
+    return render_template('auth/login.html', title="Login")
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -59,7 +76,7 @@ def register():
             flash('Terjadi kesalahan. Silakan coba lagi.', 'danger')
             return redirect(url_for('auth_bp.register'))
 
-    return render_template('register.html')
+    return render_template('auth/register.html')
 
 @auth_bp.route('/logout')
 @login_required
