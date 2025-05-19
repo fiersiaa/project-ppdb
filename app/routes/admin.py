@@ -1,6 +1,7 @@
+from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from ..models import Pendaftaran, User
 from .. import db
@@ -17,8 +18,8 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:
             logger.warning(f"Unauthorized access attempt by user: {current_user}")
-            flash('Anda tidak memiliki akses ke halaman admin.', 'danger')
-            return redirect(url_for('auth_bp.login'))
+            flash('Anda tidak memiliki akses ke halaman ini', 'danger')
+            return redirect(url_for('main_bp.home'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -48,7 +49,7 @@ def dashboard_admin():
     except Exception as e:
         logger.error(f"Error in dashboard: {str(e)}")
         flash('Terjadi kesalahan saat memuat data.', 'danger')
-        return redirect(url_for('main_bp.index'))
+        return redirect(url_for('main_bp.home'))
 
 @admin_bp.route('/proses_pendaftaran/<int:id>', methods=['POST'])
 @login_required
@@ -108,9 +109,20 @@ def daftar_diterima():
     try:
         diterima = Pendaftaran.query.filter_by(status='Diterima')\
             .order_by(Pendaftaran.tanggal_diproses.desc()).all()
+        
+        # Log payment status
+        for p in diterima:
+            if p.bukti_pembayaran:
+                logger.info(f"Payment received for {p.nama_lengkap} on {p.tanggal_upload_pembayaran}")
+            else:
+                deadline = p.tanggal_diproses + timedelta(days=3)
+                if datetime.utcnow() > deadline:
+                    logger.warning(f"Payment overdue for {p.nama_lengkap}")
+        
         return render_template('admin/diterima.html',
                              diterima=diterima,
-                             title="Daftar Siswa Diterima")
+                             title="Daftar Siswa Diterima",
+                             timedelta=timedelta)
     except Exception as e:
         logger.error(f"Error loading accepted applications: {str(e)}")
         flash('Terjadi kesalahan saat memuat data.', 'danger')

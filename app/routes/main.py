@@ -1,17 +1,38 @@
-from flask import Blueprint, redirect, url_for, render_template, flash, request
-from datetime import datetime
+from flask import Blueprint, redirect, url_for, render_template, flash, request, current_app
+from datetime import datetime, timedelta
 from ..models import Pendaftaran
 from .. import db
 from flask_login import login_required, current_user
 import logging
+import os
+from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main_bp', __name__)
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+UPLOAD_FOLDER = 'app/static/uploads/payments'
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @main_bp.route("/")
 def home():
-    return render_template("index.html", title="Halaman Utama PPDB")
+    if current_user.is_authenticated and not current_user.is_admin:
+        # Get user's registration status
+        pendaftaran = Pendaftaran.query.filter_by(user_id=current_user.id).first()
+        if pendaftaran:
+            if pendaftaran.status == 'Diterima':
+                flash(f'Selamat! Pendaftaran Anda telah DITERIMA! {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'success')
+            elif pendaftaran.status == 'Ditolak':
+                flash(f'Mohon maaf, pendaftaran Anda belum dapat kami terima. {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'danger')
+            elif pendaftaran.status == 'Pending':
+                flash('Pendaftaran Anda sedang dalam proses review.', 'info')
+    
+    return render_template("index.html", 
+                         title="Halaman Utama PPDB",
+                         pendaftaran=pendaftaran if current_user.is_authenticated else None)
 
 @main_bp.route("/dashboard")
 @login_required
@@ -69,7 +90,7 @@ def daftar():
                          title="Formulir Pendaftaran PPDB",
                          now=datetime.now())
 
-@main_bp.route("/detail-pendaftaran")
+@main_bp.route("/detail_pendaftaran")
 @login_required
 def detail_pendaftaran():
     pendaftaran = Pendaftaran.query.filter_by(user_id=current_user.id).first()
@@ -77,6 +98,68 @@ def detail_pendaftaran():
         flash('Anda belum melakukan pendaftaran', 'warning')
         return redirect(url_for('main_bp.daftar'))
     
+    # Calculate payment deadline for accepted students
+    if pendaftaran.status == 'Diterima':
+        payment_deadline = pendaftaran.tanggal_diproses + timedelta(days=3)
+        if datetime.now() > payment_deadline:
+            flash('Batas waktu pembayaran telah berakhir!', 'danger')
+        else:
+            remaining = payment_deadline - datetime.now()
+            flash(f'Sisa waktu pembayaran: {remaining.days} hari {remaining.seconds//3600} jam', 'warning')
+    
     return render_template('detail_pendaftaran.html', 
                          title="Detail Pendaftaran",
+                         pendaftaran=pendaftaran,
+                         timedelta=timedelta)  # Pass timedelta to template
+
+@main_bp.route("/upload-pembayaran", methods=['GET', 'POST'])
+@login_required
+def upload_pembayaran():
+    pendaftaran = Pendaftaran.query.filter_by(user_id=current_user.id).first()
+    
+    if not pendaftaran or pendaftaran.status != 'Diterima':
+        flash('Anda tidak memiliki akses ke halaman ini', 'danger')
+        return redirect(url_for('main_bp.home'))
+    
+    if request.method == 'POST':
+        if 'bukti_pembayaran' not in request.files:
+            flash('Tidak ada file yang dipilih', 'danger')
+            return redirect(request.url)
+            
+        file = request.files['bukti_pembayaran']
+        
+        if file.filename == '':
+            flash('Tidak ada file yang dipilih', 'danger')
+            return redirect(request.url)
+            
+        if file and allowed_file(file.filename):
+            try:
+                # Create upload directory if it doesn't exist
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                
+                # Generate unique filename
+                filename = secure_filename(f"{pendaftaran.id}_{file.filename}")
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                
+                # Save file
+                file.save(filepath)
+                
+                # Update database
+                pendaftaran.bukti_pembayaran = filename
+                pendaftaran.tanggal_upload_pembayaran = datetime.now()
+                db.session.commit()
+                
+                flash('Bukti pembayaran berhasil diupload!', 'success')
+                return redirect(url_for('main_bp.detail_pendaftaran'))
+                
+            except Exception as e:
+                logger.error(f"Upload error: {str(e)}")
+                flash('Terjadi kesalahan saat upload file', 'danger')
+                return redirect(request.url)
+        else:
+            flash('Format file tidak diizinkan. Gunakan PNG, JPG, JPEG, atau PDF', 'danger')
+            return redirect(request.url)
+            
+    return render_template('upload_pembayaran.html', 
+                         title="Upload Bukti Pembayaran",
                          pendaftaran=pendaftaran)

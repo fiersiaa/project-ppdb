@@ -67,9 +67,8 @@
                                 <th>Nama Lengkap</th>
                                 <th>Asal Sekolah</th>
                                 <th>Nilai UN</th>
-                                <th>Tanggal Daftar</th>
-                                <th>Tanggal Diproses</th>
-                                <th>Diproses Oleh</th>
+                                <th>Tanggal Diterima</th>
+                                <th>Status Pembayaran</th>
                                 <th>Detail</th>
                             </tr>
                         </thead>
@@ -80,21 +79,38 @@
                                 <td>{{ p.nama_lengkap }}</td>
                                 <td>{{ p.asal_sekolah }}</td>
                                 <td>{{ p.nilai_un }}</td>
-                                <td>{{ p.tanggal_daftar.strftime('%d-%m-%Y') }}</td>
-                                <td>{{ p.tanggal_diproses.strftime('%d-%m-%Y') if p.tanggal_diproses else '-' }}</td>
-                                <td>{{ p.admin.username if p.admin else '-' }}</td>
+                                <td>{{ p.tanggal_diproses.strftime('%d-%m-%Y') }}</td>
+                                <td>
+                                    {% if p.bukti_pembayaran %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-success me-2">
+                                                <i class="bi bi-check-circle"></i> Sudah Bayar
+                                            </span>
+                                            <small class="text-muted">
+                                                {{ p.tanggal_upload_pembayaran.strftime('%d-%m-%Y %H:%M') }}
+                                            </small>
+                                            <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
+                                               class="btn btn-sm btn-info text-white ms-2" target="_blank">
+                                                <i class="bi bi-eye"></i> Bukti
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-danger me-2">
+                                                <i class="bi bi-x-circle"></i> Belum Bayar
+                                            </span>
+                                            <small class="text-warning">
+                                                <i class="bi bi-clock"></i> 
+                                                Batas: {{ (p.tanggal_diproses + timedelta(days=3)).strftime('%d-%m-%Y') }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="{{ url_for('admin_bp.detail_pendaftar', id=p.id) }}" 
-                                       class="btn btn-sm btn-info text-white">
-                                        <i class="bi bi-eye"></i> Detail
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-file-text"></i> Detail
                                     </a>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="8" class="text-center py-4">
-                                    <i class="bi bi-info-circle text-info fs-4"></i>
-                                    <p class="mb-0 mt-2">Belum ada siswa yang diterima</p>
                                 </td>
                             </tr>
                             {% endfor %}
