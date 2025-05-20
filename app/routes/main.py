@@ -19,20 +19,33 @@ def allowed_file(filename):
 
 @main_bp.route("/")
 def home():
-    if current_user.is_authenticated and not current_user.is_admin:
-        # Get user's registration status
-        pendaftaran = Pendaftaran.query.filter_by(user_id=current_user.id).first()
-        if pendaftaran:
-            if pendaftaran.status == 'Diterima':
-                flash(f'Selamat! Pendaftaran Anda telah DITERIMA! {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'success')
-            elif pendaftaran.status == 'Ditolak':
-                flash(f'Mohon maaf, pendaftaran Anda belum dapat kami terima. {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'danger')
-            elif pendaftaran.status == 'Pending':
-                flash('Pendaftaran Anda sedang dalam proses review.', 'info')
+    try:
+        # If user is admin, redirect to admin dashboard
+        if current_user.is_authenticated and current_user.is_admin:
+            return redirect(url_for('admin_bp.dashboard_admin'))
+
+        # For regular authenticated users
+        pendaftaran = None
+        if current_user.is_authenticated:
+            pendaftaran = Pendaftaran.query.filter_by(user_id=current_user.id).first()
+            if pendaftaran:
+                if pendaftaran.status == 'Diterima':
+                    flash(f'Selamat! Pendaftaran Anda telah DITERIMA! {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'success')
+                elif pendaftaran.status == 'Ditolak':
+                    flash(f'Mohon maaf, pendaftaran Anda belum dapat kami terima. {pendaftaran.catatan_admin if pendaftaran.catatan_admin else ""}', 'danger')
+                elif pendaftaran.status == 'Pending':
+                    flash('Pendaftaran Anda sedang dalam proses review.', 'info')
     
-    return render_template("index.html", 
-                         title="Halaman Utama PPDB",
-                         pendaftaran=pendaftaran if current_user.is_authenticated else None)
+        return render_template("index.html", 
+                            title="Halaman Utama PPDB",
+                            pendaftaran=pendaftaran)
+
+    except Exception as e:
+        logger.error(f"Error in home route: {str(e)}")
+        flash('Terjadi kesalahan sistem', 'danger')
+        return render_template("index.html", 
+                            title="Halaman Utama PPDB",
+                            pendaftaran=None)
 
 @main_bp.route("/dashboard")
 @login_required

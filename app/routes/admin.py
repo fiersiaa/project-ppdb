@@ -2,7 +2,6 @@ from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
-from functools import wraps
 from ..models import Pendaftaran, User
 from .. import db
 import logging
@@ -100,7 +99,7 @@ def detail_pendaftar(id):
         flash('Data pendaftaran tidak ditemukan.', 'danger')
         return redirect(url_for('admin_bp.dashboard_admin'))
 
-@admin_bp.route('/daftar_diterima')
+@admin_bp.route('/daftar-diterima')  # Changed URL pattern
 @login_required
 @admin_required
 def daftar_diterima():
@@ -110,25 +109,20 @@ def daftar_diterima():
         diterima = Pendaftaran.query.filter_by(status='Diterima')\
             .order_by(Pendaftaran.tanggal_diproses.desc()).all()
         
-        # Log payment status
-        for p in diterima:
-            if p.bukti_pembayaran:
-                logger.info(f"Payment received for {p.nama_lengkap} on {p.tanggal_upload_pembayaran}")
-            else:
-                deadline = p.tanggal_diproses + timedelta(days=3)
-                if datetime.utcnow() > deadline:
-                    logger.warning(f"Payment overdue for {p.nama_lengkap}")
+        # Add now variable for template
+        now = datetime.utcnow()
         
         return render_template('admin/diterima.html',
                              diterima=diterima,
                              title="Daftar Siswa Diterima",
+                             now=now,
                              timedelta=timedelta)
     except Exception as e:
         logger.error(f"Error loading accepted applications: {str(e)}")
         flash('Terjadi kesalahan saat memuat data.', 'danger')
         return redirect(url_for('admin_bp.dashboard_admin'))
 
-@admin_bp.route('/daftar_ditolak')
+@admin_bp.route('/ditolak')
 @login_required
 @admin_required
 def daftar_ditolak():

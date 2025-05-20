@@ -17,27 +17,12 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Check for admin credentials
-        if username == "admin" and password == "22":
-            # Get or create admin user
-            admin_user = User.query.filter_by(username='admin').first()
-            if not admin_user:
-                admin_user = User(
-                    username='admin',
-                    password=generate_password_hash('22'),
-                    is_admin=True
-                )
-                db.session.add(admin_user)
-                db.session.commit()
-            
-            login_user(admin_user)
-            flash('Selamat datang, Admin!', 'success')
-            return redirect(url_for('admin_bp.dashboard_admin'))
-        
-        # Regular user login
         user = User.query.filter_by(username=username).first()
+        
         if user and check_password_hash(user.password, password):
             login_user(user)
+            if user.is_admin:
+                return redirect(url_for('admin_bp.dashboard_admin'))
             return redirect(url_for('main_bp.home'))
             
         flash('Username atau password salah', 'danger')
