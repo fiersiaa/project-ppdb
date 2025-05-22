@@ -237,12 +237,21 @@
 
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <input type="tel" class="form-control" id="nomor_hp" name="nomor_hp" 
-                                               placeholder="Nomor HP" required
-                                               pattern="[0-9]{10,15}">
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="nomor_hp" 
+                                               name="nomor_hp" 
+                                               placeholder="Nomor HP"
+                                               required
+                                               pattern="[0-9]{10,13}"
+                                               onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57))"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                               minlength="10"
+                                               maxlength="13"
+                                               title="Masukkan nomor HP (10-13 digit angka)">
                                         <label for="nomor_hp">Nomor HP *</label>
                                         <div class="invalid-feedback">
-                                            Nomor HP harus diisi (10-15 digit)
+                                            Nomor HP harus berisi 10-13 digit angka
                                         </div>
                                     </div>
                                 </div>

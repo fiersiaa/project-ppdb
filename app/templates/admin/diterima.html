@@ -258,22 +258,23 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Payment Proof Image -->
+                                    <!-- Payment Proof Image with click handler -->
                                     <div class="text-center mb-3">
                                         <img src="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
                                              class="img-fluid rounded" 
-                                             style="max-height: 400px; width: auto;" 
+                                             style="max-height: 400px; width: auto; cursor: pointer;" 
+                                             onclick="openImageModal('{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}', 'Bukti Pembayaran - {{ p.nama_lengkap }}')"
                                              alt="Bukti Pembayaran">
                                     </div>
-                                    
+
                                     <!-- Action Buttons -->
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
-                                           class="btn btn-primary" target="_blank">
+                                        <button class="btn btn-primary" 
+                                                onclick="openImageModal('{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}', 'Bukti Pembayaran - {{ p.nama_lengkap }}')">
                                             <i class="bi bi-eye"></i> Lihat Ukuran Penuh
-                                        </a>
+                                        </button>
                                         <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
-                                           class="btn btn-info" download>
+                                           class="btn btn-info text-white" download>
                                             <i class="bi bi-download"></i> Unduh Bukti
                                         </a>
                                     </div>

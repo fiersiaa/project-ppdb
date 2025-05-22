@@ -1,13 +1,13 @@
 from functools import wraps
-from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, send_from_directory, current_app
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from ..models import Pendaftaran, User
 from .. import db
 import logging
 import pandas as pd
-import io
-from openpyxl.styles import PatternFill
+from io import BytesIO
+import os
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -158,130 +158,147 @@ def konfirmasi_pembayaran(id):
         flash('Terjadi kesalahan saat konfirmasi pembayaran', 'danger')
         return redirect(url_for('admin_bp.daftar_diterima'))
 
-@admin_bp.route('/statistik')
+@admin_bp.route('/laporan')
 @login_required
 @admin_required
-def statistik():
+def laporan():
+    try:
+        # Get basic statistics
+        total_pendaftar = Pendaftaran.query.count()
+        total_diterima = Pendaftaran.query.filter_by(status='Diterima').count()
+        total_ditolak = Pendaftaran.query.filter_by(status='Ditolak').count()
+        total_pending = Pendaftaran.query.filter_by(status='Pending').count()
+        
+        # Get payment statistics
+        total_sudah_bayar = Pendaftaran.query.filter(
+            Pendaftaran.status == 'Diterima',
+            Pendaftaran.bukti_pembayaran.isnot(None)
+        ).count()
+        
+        # Get age distribution
+        now = datetime.utcnow()
+        age_distribution = db.session.query(
+            db.func.strftime('%Y', now) - db.func.strftime('%Y', Pendaftaran.tanggal_lahir),
+            db.func.count(Pendaftaran.id)
+        ).group_by(
+            db.func.strftime('%Y', now) - db.func.strftime('%Y', Pendaftaran.tanggal_lahir)
+        ).all()
+        
+        # Get gender distribution
+        gender_distribution = db.session.query(
+            Pendaftaran.jenis_kelamin,
+            db.func.count(Pendaftaran.id)
+        ).group_by(Pendaftaran.jenis_kelamin).all()
+        
+        # Get average UN score
+        avg_nilai_un = db.session.query(
+            db.func.avg(Pendaftaran.nilai_un)
+        ).scalar()
+        
+        # Get registration trends
+        registrations_per_day = db.session.query(
+            db.func.date(Pendaftaran.tanggal_daftar),
+            db.func.count(Pendaftaran.id)
+        ).group_by(
+            db.func.date(Pendaftaran.tanggal_daftar)
+        ).order_by(
+            db.func.date(Pendaftaran.tanggal_daftar)
+        ).all()
+        
+        return render_template(
+            'admin/laporan.html',
+            title="Laporan PPDB",
+            total_pendaftar=total_pendaftar,
+            total_diterima=total_diterima,
+            total_ditolak=total_ditolak,
+            total_pending=total_pending,
+            total_sudah_bayar=total_sudah_bayar,
+            age_distribution=age_distribution,
+            gender_distribution=gender_distribution,
+            avg_nilai_un=avg_nilai_un,
+            registrations_per_day=registrations_per_day
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating report: {str(e)}")
+        flash('Terjadi kesalahan saat memuat laporan.', 'danger')
+        return redirect(url_for('admin_bp.dashboard_admin'))
+
+@admin_bp.route('/export-laporan')
+@login_required
+@admin_required
+def export_laporan():
     try:
         # Get all registrations
         pendaftaran = Pendaftaran.query.all()
         
-        # Basic statistics
-        total_pendaftar = len(pendaftaran)
-        total_diterima = sum(1 for p in pendaftaran if p.status == 'Diterima')
-        total_ditolak = sum(1 for p in pendaftaran if p.status == 'Ditolak')
-        total_pending = sum(1 for p in pendaftaran if p.status == 'Pending')
-        
-        # Gender statistics
-        laki_laki = sum(1 for p in pendaftaran if p.jenis_kelamin == 'Laki-laki')
-        perempuan = sum(1 for p in pendaftaran if p.jenis_kelamin == 'Perempuan')
-        
-        # Payment statistics for accepted students
-        diterima_list = [p for p in pendaftaran if p.status == 'Diterima']
-        sudah_bayar = sum(1 for p in diterima_list if p.status_pembayaran == 'Sudah Bayar')
-        belum_bayar = sum(1 for p in diterima_list if p.status_pembayaran == 'Belum Bayar')
-        
-        # Calculate average UN score
-        nilai_list = [p.nilai_un for p in pendaftaran]
-        avg_nilai = sum(nilai_list) / len(nilai_list) if nilai_list else 0
-        
-        # Get school distribution
-        sekolah_count = {}
+        # Create DataFrame
+        data = []
         for p in pendaftaran:
-            sekolah_count[p.asal_sekolah] = sekolah_count.get(p.asal_sekolah, 0) + 1
-        
-        # Sort schools by count
-        sekolah_data = sorted(sekolah_count.items(), key=lambda x: x[1], reverse=True)
-        
-        return render_template('admin/statistik.html',
-                             total_pendaftar=total_pendaftar,
-                             total_diterima=total_diterima,
-                             total_ditolak=total_ditolak,
-                             total_pending=total_pending,
-                             laki_laki=laki_laki,
-                             perempuan=perempuan,
-                             sudah_bayar=sudah_bayar,
-                             belum_bayar=belum_bayar,
-                             avg_nilai=round(avg_nilai, 2),
-                             sekolah_data=sekolah_data[:5],  # Top 5 schools
-                             now=datetime.now())
-                             
-    except Exception as e:
-        logger.error(f"Error generating statistics: {str(e)}")
-        flash('Terjadi kesalahan saat memuat statistik', 'danger')
-        return redirect(url_for('admin_bp.dashboard_admin'))
-
-@admin_bp.route('/export-excel/<report_type>')
-@login_required
-@admin_required
-def export_excel(report_type):
-    try:
-        if report_type == 'semua':
-            data = Pendaftaran.query.all()
-            filename = 'data_semua_pendaftar.xlsx'
-        elif report_type == 'diterima':
-            data = Pendaftaran.query.filter_by(status='Diterima').all()
-            filename = 'data_pendaftar_diterima.xlsx'
-        elif report_type == 'ditolak':
-            data = Pendaftaran.query.filter_by(status='Ditolak').all()
-            filename = 'data_pendaftar_ditolak.xlsx'
-        else:
-            flash('Tipe laporan tidak valid', 'danger')
-            return redirect(url_for('admin_bp.statistik'))
-
-        # Convert to DataFrame
-        df_data = []
-        for p in data:
-            df_data.append({
-                'ID': p.id,
+            data.append({
                 'Nama Lengkap': p.nama_lengkap,
                 'Jenis Kelamin': p.jenis_kelamin,
-                'Tempat Lahir': p.tempat_lahir,
                 'Tanggal Lahir': p.tanggal_lahir.strftime('%d-%m-%Y'),
-                'Alamat': p.alamat,
-                'No. HP': p.nomor_hp,
                 'Asal Sekolah': p.asal_sekolah,
                 'Nilai UN': p.nilai_un,
                 'Status': p.status,
                 'Tanggal Daftar': p.tanggal_daftar.strftime('%d-%m-%Y %H:%M'),
-                'Status Pembayaran': p.status_pembayaran,
-                'Tanggal Upload Pembayaran': p.tanggal_upload_pembayaran.strftime('%d-%m-%Y %H:%M') if p.tanggal_upload_pembayaran else '-',
-                'Catatan Admin': p.catatan_admin or '-'
+                'Status Pembayaran': 'Sudah Bayar' if p.bukti_pembayaran else 'Belum Bayar',
+                'Tanggal Diproses': p.tanggal_diproses.strftime('%d-%m-%Y %H:%M') if p.tanggal_diproses else '-'
             })
-
-        df = pd.DataFrame(df_data)
-
+        
+        df = pd.DataFrame(data)
+        
         # Create Excel file in memory
-        output = io.BytesIO()
+        output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # Write main data
             df.to_excel(writer, sheet_name='Data Pendaftar', index=False)
             
-            # Get workbook and worksheet
-            workbook = writer.book
-            worksheet = writer.sheets['Data Pendaftar']
+            # Write summary sheet
+            summary_data = {
+                'Metrik': [
+                    'Total Pendaftar',
+                    'Diterima',
+                    'Ditolak',
+                    'Pending',
+                    'Sudah Bayar',
+                    'Rata-rata Nilai UN'
+                ],
+                'Jumlah': [
+                    len(pendaftaran),
+                    sum(1 for p in pendaftaran if p.status == 'Diterima'),
+                    sum(1 for p in pendaftaran if p.status == 'Ditolak'),
+                    sum(1 for p in pendaftaran if p.status == 'Pending'),
+                    sum(1 for p in pendaftaran if p.bukti_pembayaran),
+                    sum(p.nilai_un for p in pendaftaran) / len(pendaftaran) if pendaftaran else 0
+                ]
+            }
+            pd.DataFrame(summary_data).to_excel(writer, sheet_name='Ringkasan', index=False)
             
-            # Add formats
+            # Get workbook and worksheet objects
+            workbook = writer.book
+            
+            # Add some formats
             header_format = workbook.add_format({
                 'bold': True,
-                'bg_color': '#0D6EFD',
+                'bg_color': '#0d6efd',
                 'font_color': 'white',
                 'border': 1
             })
             
-            # Format headers
-            for col_num, value in enumerate(df.columns.values):
-                worksheet.write(0, col_num, value, header_format)
-                worksheet.set_column(col_num, col_num, 15)  # Set column width
-            
-            # Adjust specific column widths
-            worksheet.set_column('B:B', 25)  # Nama Lengkap
-            worksheet.set_column('E:E', 20)  # Alamat
-            worksheet.set_column('H:H', 25)  # Asal Sekolah
-            worksheet.set_column('K:K', 20)  # Tanggal Daftar
-            worksheet.set_column('M:M', 25)  # Tanggal Upload Pembayaran
-            worksheet.set_column('N:N', 30)  # Catatan Admin
-
+            # Format the header row of each sheet
+            for worksheet in writer.sheets.values():
+                for col_num, value in enumerate(df.columns.values):
+                    worksheet.write(0, col_num, value, header_format)
+                worksheet.set_column(0, len(df.columns)-1, 15)  # Set column width
+        
+        # Prepare the file for download
         output.seek(0)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'Laporan_PPDB_{timestamp}.xlsx'
         
         return send_file(
             output,
@@ -289,8 +306,19 @@ def export_excel(report_type):
             as_attachment=True,
             download_name=filename
         )
-
+        
     except Exception as e:
-        logger.error(f"Error exporting to Excel: {str(e)}")
-        flash('Terjadi kesalahan saat mengekspor data', 'danger')
-        return redirect(url_for('admin_bp.statistik'))
+        logger.error(f"Error exporting report: {str(e)}")
+        flash('Terjadi kesalahan saat mengexport laporan.', 'danger')
+        return redirect(url_for('admin_bp.laporan'))
+
+@admin_bp.route('/uploads/payments/<filename>')
+@login_required
+def payment_proof(filename):
+    try:
+        uploads_dir = os.path.join(current_app.root_path, 'static/uploads/payments')
+        return send_from_directory(uploads_dir, filename)
+    except Exception as e:
+        logger.error(f"Error displaying payment proof: {str(e)}")
+        flash('Terjadi kesalahan saat menampilkan bukti pembayaran.', 'danger')
+        return redirect(url_for('admin_bp.daftar_diterima'))

@@ -20,31 +20,15 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Admin login check
-        if username == "admin" and password == "22":
-            admin = User.query.filter_by(username='admin').first()
-            if not admin:
-                # Create admin user if not exists
-                admin = User(
-                    username='admin',
-                    password=generate_password_hash('22'),
-                    is_admin=True
-                )
-                db.session.add(admin)
-                db.session.commit()
-                
-            login_user(admin)
-            flash('Selamat datang, Admin!', 'success')
-            return redirect(url_for('admin_bp.dashboard_admin'))
-        
-        # Regular user login
         user = User.query.filter_by(username=username).first()
+        
         if user and check_password_hash(user.password, password):
             login_user(user)
+            flash('Login berhasil!', 'success')
             return redirect(url_for('main_bp.home'))
-        
-        flash('Username atau password salah', 'danger')
-    
+        else:
+            flash('Username atau password salah. Belum punya akun? Silakan register terlebih dahulu.', 'warning')
+            
     return render_template('auth/login.html', title="Login")
 
 @auth_bp.route('/register', methods=['GET', 'POST'])

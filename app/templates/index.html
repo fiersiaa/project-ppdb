@@ -29,6 +29,9 @@
             border: none;
             border-radius: 0;
             padding: 1rem 0;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
         }
         .alert-success {
             background-color: #d4edda;
@@ -41,6 +44,46 @@
         .alert-info {
             background-color: #d1ecf1;
             color: #0c5460;
+        }
+        .alert-dismissible .btn-close {
+            padding: 1.25rem;
+        }
+        .alert .container {
+            position: relative;
+            padding-right: 3rem;
+        }
+        .timeline .card {
+            position: relative;
+            border-left-width: 3px;
+        }
+        .timeline .card:before {
+            content: '';
+            position: absolute;
+            left: -3px;
+            top: 50%;
+            width: 20px;
+            height: 3px;
+            background-color: var(--bs-primary);
+        }
+        .rounded-circle {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .alert-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background-color: rgba(255,255,255,0.5);
+            width: 100%;
+            animation: progressBar 7s linear;
+        }
+        @keyframes progressBar {
+            0% { width: 100%; }
+            100% { width: 0%; }
         }
     </style>
 </head>
@@ -91,6 +134,27 @@
         </div>
     </nav>
 
+    <!-- Add this right after the navbar -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-0" role="alert">
+                    <div class="container">
+                        {% if category == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif category == 'danger' %}
+                            <i class="bi bi-x-circle-fill me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <!-- Add this after the navbar -->
     {% if current_user.is_authenticated and not current_user.is_admin %}
         {% if pendaftaran %}
@@ -137,7 +201,10 @@
              <a href="{{ url_for('main_bp.daftar') }}" class="btn btn-light btn-lg px-4 me-2">
                  <i class="bi bi-person-plus"></i> Mulai Pendaftaran
             </a>
-            <a href="#info" class="btn btn-outline-light btn-lg px-4">Pelajari Selengkapnya</a>
+            <!-- Update the button to trigger modal -->
+            <a href="#info" class="btn btn-outline-light btn-lg px-4" data-bs-toggle="modal" data-bs-target="#ppdbInfoModal">
+                Pelajari Selengkapnya
+            </a>
         </div>
     </section>
 
@@ -180,47 +247,108 @@
         </div>
     </section>
 
-    <!-- Jadwal Section -->
-    <section class="py-5 bg-light" id="jadwal">
-        <div class="container">
-            <h2 class="text-center mb-5">Timeline PPDB</h2>
-            <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <div class="card shadow-sm">
-                        <div class="card-body p-4">
-                            <div class="d-flex mb-3">
-                                <div class="p-2 bg-primary text-white rounded me-3">
-                                    <i class="bi bi-1-circle"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1">Pendaftaran Online</h5>
-                                    <p class="text-muted mb-0">1 - 15 Juni 2025</p>
-                                </div>
+
+    <!-- Replace the existing cara-daftar section with this -->
+<section class="py-5" id="cara-daftar">
+    <div class="container">
+        <h2 class="text-center mb-5">Langkah-Langkah Pendaftaran</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Step 1 -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <span class="h5 text-primary mb-0">1</span>
                             </div>
-                            <div class="d-flex mb-3">
-                                <div class="p-2 bg-primary text-white rounded me-3">
-                                    <i class="bi bi-2-circle"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1">Verifikasi Berkas</h5>
-                                    <p class="text-muted mb-0">16 - 20 Juni 2025</p>
-                                </div>
+                            <h5 class="card-title mb-0">Register Akun</h5>
+                        </div>
+                        <p class="card-text text-muted ms-5">
+                            Klik tombol "Register" pada menu navigasi untuk membuat akun baru.
+                            Isi username dan password yang akan digunakan untuk login.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <span class="h5 text-primary mb-0">2</span>
                             </div>
-                            <div class="d-flex">
-                                <div class="p-2 bg-primary text-white rounded me-3">
-                                    <i class="bi bi-3-circle"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1">Pengumuman Hasil</h5>
-                                    <p class="text-muted mb-0">25 Juni 2025</p>
-                                </div>
+                            <h5 class="card-title mb-0">Login & Persiapkan Dokumen</h5>
+                        </div>
+                        <div class="ms-5">
+                            <p class="card-text text-muted mb-3">
+                                Setelah register, login dengan akun Anda dan siapkan dokumen berikut:
+                            </p>
+                            <ul class="text-muted small">
+                                <li>Pas foto terbaru dengan latar merah/biru</li>
+                                <li>Scan ijazah atau surat keterangan lulus</li>
+                                <li>Nilai UN/rapor terakhir</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <span class="h5 text-primary mb-0">3</span>
+                            </div>
+                            <h5 class="card-title mb-0">Lengkapi Formulir Pendaftaran</h5>
+                        </div>
+                        <p class="card-text text-muted ms-5">
+                            Isi formulir pendaftaran dengan data yang valid dan lengkap.
+                            Upload dokumen yang telah disiapkan sebelumnya.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <span class="h5 text-primary mb-0">4</span>
+                            </div>
+                            <h5 class="card-title mb-0">Proses Verifikasi</h5>
+                        </div>
+                        <p class="card-text text-muted ms-5">
+                            Tunggu proses verifikasi oleh admin. Anda dapat memantau status 
+                            pendaftaran melalui halaman detail pendaftaran.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-3 me-3">
+                                <span class="h5 text-primary mb-0">5</span>
+                            </div>
+                            <h5 class="card-title mb-0">Pembayaran</h5>
+                        </div>
+                        <div class="ms-5">
+                            <p class="card-text text-muted mb-2">
+                                Jika dinyatakan diterima, lakukan pembayaran biaya pendaftaran 
+                                sebesar Rp 500.000 dalam waktu 3 hari.
+                            </p>
+                            <div class="alert alert-light border-start border-4 small mb-0">
+                                <i class="bi bi-info-circle text-primary me-2"></i>
+                                Pembayaran hanya dilakukan setelah dinyatakan diterima
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Footer -->
     <footer class="bg-dark text-white py-4" id="kontak">
@@ -247,6 +375,150 @@
             </div>
         </div>
     </footer>
+
+    <!-- Add this modal code before closing body tag -->
+    <div class="modal fade" id="ppdbInfoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Informasi Lengkap PPDB 2025/2026
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Timeline Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            Jadwal Pelaksanaan
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tbody>
+                                    <tr>
+                                        <td width="200">Pendaftaran Online</td>
+                                        <td>1 - 15 Juni 2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Verifikasi Berkas</td>
+                                        <td>16 - 20 Juni 2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pengumuman Hasil</td>
+                                        <td>25 Juni 2025</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Daftar Ulang</td>
+                                        <td>26 - 30 Juni 2025</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Requirements Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">
+                            <i class="bi bi-file-text me-2"></i>
+                            Persyaratan Pendaftaran
+                        </h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Scan Ijazah/Surat Keterangan Lulus
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Pas Foto Terbaru (Latar Merah/Biru)
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Nilai UN/Surat Keterangan Nilai
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Quota Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2">
+                            <i class="bi bi-people me-2"></i>
+                            Kuota Penerimaan
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <h3 class="mb-0">200</h3>
+                                        <small>Total Kuota</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <h3 class="mb-0">160</h3>
+                                        <small>Jalur Reguler</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <h3 class="mb-0">40</h3>
+                                        <small>Jalur Prestasi</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Catatan Penting:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Pendaftaran hanya dilakukan secara online</li>
+                            <li>Pastikan data yang dimasukkan sesuai dengan dokumen asli</li>
+                            <li>Biaya pendaftaran: Rp 500.000</li>
+                            <li>Pembayaran dilakukan setelah dinyatakan diterima</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <a href="{{ url_for('auth_bp.register') }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add before closing </body> tag -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto dismiss alerts
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        
+        alerts.forEach(alert => {
+            const bsAlert = new bootstrap.Alert(alert);
+            
+            // Add progress bar
+            const progress = document.createElement('div');
+            progress.className = 'alert-progress';
+            alert.appendChild(progress);
+            
+            // Start countdown
+            setTimeout(() => {
+                bsAlert.close();
+            }, 7000);
+        });
+    });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
