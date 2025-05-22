@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main_bp', __name__)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
-UPLOAD_FOLDER = 'app/static/uploads/payments'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+UPLOAD_FOLDER = 'app/static/uploads/documents'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -68,6 +68,27 @@ def daftar():
 
         if request.method == 'POST':
             try:
+                # Create upload directory if doesn't exist
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+                # Handle pas foto upload
+                pas_foto = request.files['pas_foto']
+                if pas_foto and allowed_file(pas_foto.filename):
+                    pas_foto_filename = secure_filename(f"foto_{current_user.id}_{pas_foto.filename}")
+                    pas_foto.save(os.path.join(UPLOAD_FOLDER, pas_foto_filename))
+                else:
+                    flash('Pas foto harus diupload dengan format PNG atau JPG', 'danger')
+                    return redirect(request.url)
+
+                # Handle ijazah upload
+                ijazah = request.files['ijazah']
+                if ijazah and allowed_file(ijazah.filename):
+                    ijazah_filename = secure_filename(f"ijazah_{current_user.id}_{ijazah.filename}")
+                    ijazah.save(os.path.join(UPLOAD_FOLDER, ijazah_filename))
+                else:
+                    flash('Ijazah harus diupload dengan format PNG atau JPG', 'danger')
+                    return redirect(request.url)
+
                 # Create new registration
                 pendaftaran = Pendaftaran(
                     nama_lengkap=request.form['nama_lengkap'],
@@ -79,14 +100,16 @@ def daftar():
                     asal_sekolah=request.form['asal_sekolah'],
                     nilai_un=float(request.form['nilai_un']),
                     user_id=current_user.id,
-                    status='Pending'
+                    status='Pending',
+                    pas_foto=pas_foto_filename,
+                    ijazah=ijazah_filename,
+                    tanggal_upload_dokumen=datetime.utcnow()
                 )
 
-                # Save to database
                 db.session.add(pendaftaran)
                 db.session.commit()
+                
                 logger.info(f"Registration successful for user: {current_user.username}")
-
                 flash('Pendaftaran berhasil dikirim!', 'success')
                 return redirect(url_for('main_bp.home'))
 
@@ -94,7 +117,8 @@ def daftar():
                 db.session.rollback()
                 logger.error(f"Registration error: {str(e)}")
                 flash('Terjadi kesalahan saat mendaftar. Silakan coba lagi.', 'danger')
-                
+                return redirect(request.url)
+
     except Exception as e:
         logger.error(f"Database error: {str(e)}")
         flash('Terjadi kesalahan sistem. Silakan coba lagi nanti.', 'danger')
@@ -157,9 +181,10 @@ def upload_pembayaran():
                 # Save file
                 file.save(filepath)
                 
-                # Update database
+                # Update database with payment info
                 pendaftaran.bukti_pembayaran = filename
                 pendaftaran.tanggal_upload_pembayaran = datetime.now()
+                pendaftaran.status_pembayaran = 'Sudah Bayar'
                 db.session.commit()
                 
                 flash('Bukti pembayaran berhasil diupload!', 'success')

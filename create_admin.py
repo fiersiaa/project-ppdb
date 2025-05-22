@@ -13,10 +13,10 @@ def create_admin():
             return
         
         try:
-            # Create admin user
+            # Create admin user with sha256 hashing
             admin = User(
                 username='admin',
-                password=generate_password_hash('admin123', method='scrypt'),
+                password=generate_password_hash('22', method='sha256'),
                 is_admin=True
             )
             
@@ -26,7 +26,7 @@ def create_admin():
             
             print('Admin user created successfully!')
             print('Username: admin')
-            print('Password: admin123')
+            print('Password: 22')
             
         except Exception as e:
             print(f'Error creating admin: {str(e)}')

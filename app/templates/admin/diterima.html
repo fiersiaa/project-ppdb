@@ -82,29 +82,27 @@
                                     <td>{{ p.nilai_un }}</td>
                                     <td>{{ p.tanggal_diproses.strftime('%d-%m-%Y') }}</td>
                                     <td>
-                                        {% if p.bukti_pembayaran %}
+                                        {% if p.status_pembayaran == 'Sudah Bayar' %}
                                             <div class="d-flex align-items-center">
-                                                <span class="badge bg-success me-2">
-                                                    <i class="bi bi-check-circle"></i> Sudah Bayar
+                                                <span class="badge {% if p.konfirmasi_admin %}bg-success{% else %}bg-warning{% endif %} me-2">
+                                                    {% if p.konfirmasi_admin %}
+                                                        <i class="bi bi-check-circle"></i> Pembayaran Dikonfirmasi
+                                                    {% else %}
+                                                        <i class="bi bi-clock"></i> Menunggu Konfirmasi
+                                                    {% endif %}
                                                 </span>
-                                                <small class="text-muted">
-                                                    {{ p.tanggal_upload_pembayaran.strftime('%d-%m-%Y %H:%M') }}
-                                                </small>
-                                                <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
-                                                   class="btn btn-sm btn-info text-white ms-2" target="_blank">
-                                                    <i class="bi bi-eye"></i> Bukti
-                                                </a>
+                                                {% if not p.konfirmasi_admin %}
+                                                    <a href="{{ url_for('admin_bp.konfirmasi_pembayaran', id=p.id) }}" 
+                                                       class="btn btn-sm btn-success ms-2"
+                                                       onclick="return confirm('Konfirmasi pembayaran ini?')">
+                                                        <i class="bi bi-check"></i> Konfirmasi
+                                                    </a>
+                                                {% endif %}
                                             </div>
                                         {% else %}
-                                            <div class="d-flex align-items-center">
-                                                <span class="badge bg-danger me-2">
-                                                    <i class="bi bi-x-circle"></i> Belum Bayar
-                                                </span>
-                                                <small class="text-warning">
-                                                    <i class="bi bi-clock"></i> 
-                                                    Batas: {{ (p.tanggal_diproses + timedelta(days=3)).strftime('%d-%m-%Y') }}
-                                                </small>
-                                            </div>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> Belum Bayar
+                                            </span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -172,6 +170,62 @@
                             </div>
                         </div>
 
+                        <!-- Document Section -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-images me-2"></i>Dokumen</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <!-- Pas Foto -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Pas Foto</label>
+                                        <div class="text-center">
+                                            {% if p.pas_foto %}
+                                                <img src="{{ url_for('static', filename='uploads/documents/' + p.pas_foto) }}" 
+                                                     class="img-fluid rounded shadow-sm mb-2" 
+                                                     style="max-height: 200px; width: auto; cursor: pointer;"
+                                                     onclick="openImageModal('{{ url_for('static', filename='uploads/documents/' + p.pas_foto) }}', 'Pas Foto {{ p.nama_lengkap }}')"
+                                                     alt="Pas Foto">
+                                            {% else %}
+                                                <div class="alert alert-warning mb-0">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i> Pas foto tidak tersedia
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Ijazah -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Scan Ijazah</label>
+                                        <div class="text-center">
+                                            {% if p.ijazah %}
+                                                <img src="{{ url_for('static', filename='uploads/documents/' + p.ijazah) }}" 
+                                                     class="img-fluid rounded shadow-sm mb-2" 
+                                                     style="max-height: 200px; width: auto; cursor: pointer;"
+                                                     onclick="openImageModal('{{ url_for('static', filename='uploads/documents/' + p.ijazah) }}', 'Ijazah {{ p.nama_lengkap }}')"
+                                                     alt="Ijazah">
+                                            {% else %}
+                                                <div class="alert alert-warning mb-0">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i> Ijazah tidak tersedia
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Upload Info -->
+                                    {% if p.tanggal_upload_dokumen %}
+                                    <div class="col-12">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            Dokumen diupload pada: {{ p.tanggal_upload_dokumen.strftime('%d %B %Y %H:%M') }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Data Akademik -->
                         <div class="card mb-3">
                             <div class="card-header bg-light">
@@ -190,45 +244,78 @@
                         </div>
 
                         <!-- Status dan Pembayaran -->
-                        <div class="card">
+                        <div class="card mb-3">
                             <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Status dan Pembayaran</h6>
+                                <h6 class="mb-0"><i class="bi bi-credit-card me-2"></i>Informasi Pembayaran</h6>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-2">
-                                    <div class="col-md-4 text-muted">Tanggal Daftar</div>
-                                    <div class="col-md-8">{{ p.tanggal_daftar.strftime('%d %B %Y %H:%M') }}</div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-md-4 text-muted">Tanggal Diproses</div>
-                                    <div class="col-md-8">{{ p.tanggal_diproses.strftime('%d %B %Y %H:%M') }}</div>
-                                </div>
+                                {% if p.bukti_pembayaran %}
+                                    <div class="alert alert-success d-flex align-items-center mb-3">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <div>
+                                            Bukti pembayaran telah diupload pada 
+                                            {{ p.tanggal_upload_pembayaran.strftime('%d %B %Y %H:%M') }}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Payment Proof Image -->
+                                    <div class="text-center mb-3">
+                                        <img src="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
+                                             class="img-fluid rounded" 
+                                             style="max-height: 400px; width: auto;" 
+                                             alt="Bukti Pembayaran">
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
+                                           class="btn btn-primary" target="_blank">
+                                            <i class="bi bi-eye"></i> Lihat Ukuran Penuh
+                                        </a>
+                                        <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
+                                           class="btn btn-info" download>
+                                            <i class="bi bi-download"></i> Unduh Bukti
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning d-flex align-items-center">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <div>
+                                            Siswa belum mengupload bukti pembayaran
+                                            {% set deadline = p.tanggal_diproses + timedelta(days=3) %}
+                                            <br>
+                                            <small class="{% if deadline < now %}text-danger{% else %}text-muted{% endif %}">
+                                                <i class="bi bi-clock"></i> 
+                                                Batas waktu: {{ deadline.strftime('%d %B %Y') }}
+                                                {% if deadline < now %}
+                                                    <span class="badge bg-danger ms-2">Telah Lewat</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Additional payment status information -->
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Status dan Catatan</h6>
+                            </div>
+                            <div class="card-body">
                                 <div class="row mb-2">
                                     <div class="col-md-4 text-muted">Status Pembayaran</div>
                                     <div class="col-md-8">
                                         {% if p.bukti_pembayaran %}
-                                            <span class="badge bg-success">
-                                                <i class="bi bi-check-circle"></i> Sudah Bayar
-                                            </span>
-                                            <small class="text-muted ms-2">
-                                                pada {{ p.tanggal_upload_pembayaran.strftime('%d %B %Y %H:%M') }}
-                                            </small>
-                                            <div class="mt-2">
-                                                <a href="{{ url_for('static', filename='uploads/payments/' + p.bukti_pembayaran) }}" 
-                                                   class="btn btn-sm btn-info text-white" target="_blank">
-                                                    <i class="bi bi-eye"></i> Lihat Bukti Pembayaran
-                                                </a>
-                                            </div>
+                                            <span class="badge bg-success">Sudah Bayar</span>
                                         {% else %}
-                                            <span class="badge bg-danger">
-                                                <i class="bi bi-x-circle"></i> Belum Bayar
-                                            </span>
-                                            <small class="text-warning ms-2">
-                                                <i class="bi bi-clock"></i> 
-                                                Batas: {{ (p.tanggal_diproses + timedelta(days=3)).strftime('%d %B %Y') }}
-                                            </small>
+                                            <span class="badge bg-danger">Belum Bayar</span>
                                         {% endif %}
                                     </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4 text-muted">Tanggal Diterima</div>
+                                    <div class="col-md-8">{{ p.tanggal_diproses.strftime('%d %B %Y %H:%M') }}</div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 text-muted">Catatan Admin</div>
@@ -247,5 +334,42 @@
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Add Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <img src="" class="img-fluid" id="modalImage" alt="Document Preview">
+                </div>
+                <div class="modal-footer">
+                    <a href="" class="btn btn-primary" id="downloadBtn" download>
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this JavaScript at the bottom of the file -->
+    <script>
+    function openImageModal(imgSrc, title) {
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        const modalTitle = document.querySelector('#imageModal .modal-title');
+        const modalImage = document.getElementById('modalImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        modalTitle.textContent = title;
+        modalImage.src = imgSrc;
+        downloadBtn.href = imgSrc;
+        
+        modal.show();
+    }
+    </script>
 </body>
 </html>

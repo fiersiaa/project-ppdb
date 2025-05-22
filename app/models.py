@@ -8,6 +8,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # One-to-many relationship with Pendaftaran
     pendaftaran = db.relationship('Pendaftaran', backref='pendaftar', lazy=True,
@@ -27,10 +28,19 @@ class Pendaftaran(db.Model):
     status = db.Column(db.String(20), default='Pending')
     tanggal_daftar = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Foreign key to User (pendaftar)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # Payment fields
+    bukti_pembayaran = db.Column(db.String(255), nullable=True)
+    tanggal_upload_pembayaran = db.Column(db.DateTime, nullable=True)
+    status_pembayaran = db.Column(db.String(20), default='Belum Bayar')
+    konfirmasi_admin = db.Column(db.Boolean, default=False)
     
-    # Foreign key to User (admin)
+    # Add new fields for documents
+    pas_foto = db.Column(db.String(255), nullable=True)
+    ijazah = db.Column(db.String(255), nullable=True)
+    tanggal_upload_dokumen = db.Column(db.DateTime, nullable=True)
+    
+    # Foreign keys
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     diproses_oleh = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     tanggal_diproses = db.Column(db.DateTime, nullable=True)
     catatan_admin = db.Column(db.Text, nullable=True)

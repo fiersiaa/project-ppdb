@@ -172,7 +172,7 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="{{ url_for('main_bp.daftar') }}" class="row g-4" novalidate>
+                            <form method="POST" action="{{ url_for('main_bp.daftar') }}" class="row g-4" enctype="multipart/form-data">
                                 <!-- Data Pribadi -->
                                 <div class="col-md-6">
                                     <div class="form-floating">
@@ -272,6 +272,33 @@
                                     </div>
                                 </div>
 
+                                <!-- Upload Dokumen -->
+                                <div class="col-12">
+                                    <h5 class="mb-3">Upload Dokumen</h5>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label for="pas_foto" class="form-label">Pas Foto (PNG/JPG) *</label>
+                                        <input type="file" class="form-control" id="pas_foto" name="pas_foto" 
+                                               accept=".png,.jpg,.jpeg" required>
+                                        <div class="form-text">
+                                            Upload pas foto terbaru dengan latar belakang merah/biru
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <label for="ijazah" class="form-label">Scan Ijazah/SKL (PNG/JPG) *</label>
+                                        <input type="file" class="form-control" id="ijazah" name="ijazah" 
+                                               accept=".png,.jpg,.jpeg" required>
+                                        <div class="form-text">
+                                            Upload scan ijazah atau surat keterangan lulus yang jelas
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-12 text-center mt-4">
                                     <button type="submit" class="btn btn-primary px-5">
                                         <i class="bi bi-send me-2"></i>
@@ -304,6 +331,33 @@
             });
         });
     })();
+
+    function previewFile(input, previewId) {
+        const preview = document.getElementById(previewId);
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onloadend = function () {
+            preview.src = reader.result;
+            preview.style.display = 'block';
+        }
+
+        if (file) {
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
+    // Add event listeners
+    document.getElementById('pas_foto').addEventListener('change', function() {
+        previewFile(this, 'fotoPreview');
+    });
+
+    document.getElementById('ijazah').addEventListener('change', function() {
+        previewFile(this, 'ijazahPreview');
+    });
     </script>
 </body>
 </html>

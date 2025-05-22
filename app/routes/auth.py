@@ -3,6 +3,9 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from ..models import User
 from .. import db
+import logging
+
+logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -17,51 +20,77 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        user = User.query.filter_by(username=username).first()
+        # Admin login check
+        if username == "admin" and password == "22":
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                # Create admin user if not exists
+                admin = User(
+                    username='admin',
+                    password=generate_password_hash('22'),
+                    is_admin=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                
+            login_user(admin)
+            flash('Selamat datang, Admin!', 'success')
+            return redirect(url_for('admin_bp.dashboard_admin'))
         
+        # Regular user login
+        user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            if user.is_admin:
-                return redirect(url_for('admin_bp.dashboard_admin'))
             return redirect(url_for('main_bp.home'))
-            
+        
         flash('Username atau password salah', 'danger')
     
     return render_template('auth/login.html', title="Login")
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main_bp.home'))
+
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-
-        # Check if username exists
-        user_exists = User.query.filter_by(username=username).first()
-        if user_exists:
-            flash('Username sudah digunakan. Silakan pilih username lain.', 'danger')
-            return redirect(url_for('auth_bp.register'))
-
-        # Validate password confirmation
-        if password != confirm_password:
-            flash('Password dan konfirmasi password tidak cocok.', 'danger')
-            return redirect(url_for('auth_bp.register'))
-
-        # Create new user
-        hashed_password = generate_password_hash(password, method='sha256')
-        new_user = User(username=username, password=hashed_password)
-        
         try:
+            username = request.form.get('username')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+
+            # Validation
+            if not username or not password or not confirm_password:
+                flash('Semua field harus diisi', 'danger')
+                return redirect(url_for('auth_bp.register'))
+
+            if User.query.filter_by(username=username).first():
+                flash('Username sudah digunakan', 'danger')
+                return redirect(url_for('auth_bp.register'))
+
+            if password != confirm_password:
+                flash('Password dan konfirmasi password tidak cocok', 'danger')
+                return redirect(url_for('auth_bp.register'))
+
+            # Create new user
+            new_user = User(
+                username=username,
+                password=generate_password_hash(password, method='sha256')
+            )
+            
             db.session.add(new_user)
             db.session.commit()
-            flash('Pendaftaran berhasil! Silakan login.', 'success')
+            
+            logger.info(f"New user registered: {username}")
+            flash('Registrasi berhasil! Silakan login dengan akun Anda.', 'success')
             return redirect(url_for('auth_bp.login'))
-        except:
+            
+        except Exception as e:
             db.session.rollback()
-            flash('Terjadi kesalahan. Silakan coba lagi.', 'danger')
+            logger.error(f"Registration error: {str(e)}")
+            flash('Terjadi kesalahan saat mendaftar. Silakan coba lagi.', 'danger')
             return redirect(url_for('auth_bp.register'))
 
-    return render_template('auth/register.html')
+    return render_template('auth/register.html', title="Register")
 
 @auth_bp.route('/logout')
 @login_required
